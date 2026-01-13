@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Phone, Calculator, AlertCircle, Check } from "lucide-react";
+import bannerImage from "@assets/uWUmx59_1768308324848.jpeg";
 import {
   apartmentTypes,
   sizeRanges,
@@ -135,6 +136,16 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Banner Image */}
+      <div className="mx-auto max-w-3xl px-4 pt-6">
+        <img
+          src={bannerImage}
+          alt="롯데하이마트 층간소음방지매트 - 층간소음으로 인한 불편함 상상매트로 해결하세요"
+          className="w-full rounded-lg shadow-lg"
+          data-testid="img-banner"
+        />
+      </div>
 
       {/* Main Content */}
       <main className="mx-auto max-w-3xl px-4 py-8">
