@@ -32,7 +32,7 @@ function calculateQuote(
   sizeRange: SizeRange,
   installationArea: InstallationArea
 ): QuoteResult {
-  const pricePerSheet = 15000; // 장당 가격
+  const pricePerSheet = 25000; // 장당 가격
 
   // Base sheets by size range
   const baseSheetsMap: Record<SizeRange, number> = {

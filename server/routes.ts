@@ -18,7 +18,7 @@ function calculateQuote(
   sizeRange: SizeRange,
   installationArea: InstallationArea
 ): QuoteResult {
-  const pricePerSheet = 15000;
+  const pricePerSheet = 25000;
 
   const baseSheetsMap: Record<SizeRange, number> = {
     "17-20": 60,
@@ -104,7 +104,7 @@ export async function registerRoutes(
     res.json({
       success: true,
       data: {
-        pricePerSheet: 15000,
+        pricePerSheet: 25000,
         minimumSheets: 60,
         storeInfo: {
           name: "롯데하이마트 안산선부점",
