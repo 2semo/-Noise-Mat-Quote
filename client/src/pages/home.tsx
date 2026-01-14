@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Phone, Calculator, AlertCircle, Check } from "lucide-react";
+import { Phone, Calculator, AlertCircle, Check, CreditCard, Gift, Info } from "lucide-react";
 import bannerImage from "@assets/uWUmx59_1768308324848.jpeg";
 import {
   apartmentTypes,
@@ -326,72 +326,144 @@ export default function Home() {
         </Card>
 
         {/* Quote Result */}
-        {showResult && quote && (
-          <Card className="mb-6 border-primary/20 bg-primary/5">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-center text-xl">견적 결과</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Summary */}
-              <div className="rounded-lg bg-background p-4 space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">아파트 타입</span>
-                  <span className="font-medium">{apartmentTypeLabels[apartmentType!]}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">평수</span>
-                  <span className="font-medium">{sizeRangeLabels[sizeRange!]}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">시공 공간</span>
-                  <span className="font-medium">{installationAreaLabels[installationArea!]}</span>
-                </div>
-              </div>
+        {showResult && quote && (() => {
+          // 금액대별 캐시백: 100만원 구간별 5%
+          const tierCashback = Math.floor(quote.totalPrice / 1000000) * 50000;
+          // 첫 결제 할인: 결제금액의 3% 최대 3만원
+          const firstPaymentDiscount = Math.min(Math.floor(quote.totalPrice * 0.03), 30000);
+          // 최종 혜택가
+          const finalBenefitPrice = quote.totalPrice - tierCashback - firstPaymentDiscount;
+          // 24개월 무이자 할부
+          const monthlyPayment = Math.ceil(quote.totalPrice / 24);
+          // 매월 30만원 사용시 캐시백
+          const monthlyCashback = 11000;
+          // 최종 월 부담금
+          const finalMonthlyPayment = monthlyPayment - monthlyCashback;
 
-              {/* Price Details */}
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">예상 매트 수량</span>
-                  <span className="font-semibold">{quote.sheets}장</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">장당 가격</span>
-                  <span className="font-medium">₩{formatPrice(quote.pricePerSheet)}</span>
-                </div>
-                <div className="border-t pt-3">
-                  <div className="flex items-end justify-between">
-                    <span className="text-base font-medium">예상 견적가</span>
-                    <div className="text-right">
-                      <span className="text-3xl font-bold text-primary" data-testid="text-total-price">
-                        ₩{formatPrice(quote.totalPrice)}
-                      </span>
-                    </div>
+          return (
+            <Card className="mb-6 border-primary/20 bg-primary/5">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-center text-xl">견적 결과</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Summary */}
+                <div className="rounded-lg bg-background p-4 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">아파트 타입</span>
+                    <span className="font-medium">{apartmentTypeLabels[apartmentType!]}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">평수</span>
+                    <span className="font-medium">{sizeRangeLabels[sizeRange!]}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">시공 공간</span>
+                    <span className="font-medium">{installationAreaLabels[installationArea!]}</span>
                   </div>
                 </div>
-              </div>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col gap-3 pt-2">
-                <a
-                  href="tel:031-483-7400"
-                  className="flex h-12 items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-primary-foreground hover-elevate active-elevate-2"
-                  data-testid="link-call-quote"
-                >
-                  <Phone className="h-5 w-5" />
-                  전화 상담 요청
-                </a>
-                <Button
-                  variant="outline"
-                  onClick={handleReset}
-                  className="h-12"
-                  data-testid="button-reset"
-                >
-                  다시 계산하기
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                {/* Price Details */}
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-1">예상 필요 장수</p>
+                    <p className="text-3xl font-bold" data-testid="text-sheets">{quote.sheets}장</p>
+                  </div>
+                  <div className="text-center border-t pt-4">
+                    <p className="text-sm text-muted-foreground mb-1">총 시공 견적</p>
+                    <p className="text-3xl font-bold text-primary" data-testid="text-total-price">
+                      ₩{formatPrice(quote.totalPrice)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Card Benefits */}
+                <div className="rounded-lg bg-background p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">혜택 내역</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">금액대별 캐시백</span>
+                    <span className="font-medium text-destructive">-₩{formatPrice(tierCashback)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">첫 결제 할인</span>
+                    <span className="font-medium text-destructive">-₩{formatPrice(firstPaymentDiscount)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-3">
+                    <span className="font-semibold">최종 혜택가</span>
+                    <span className="text-xl font-bold text-primary" data-testid="text-final-benefit-price">
+                      ₩{formatPrice(finalBenefitPrice)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Installment */}
+                <div className="rounded-lg bg-background p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-sm">24개월 무이자 할부 + 매월 30만원 사용시 1.1만원 캐시백</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">월</span>
+                    <span className="font-medium">₩{formatPrice(monthlyPayment)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">캐시백</span>
+                    <span className="font-medium text-destructive">-₩{formatPrice(monthlyCashback)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-3">
+                    <span className="font-semibold">최종 월 부담금</span>
+                    <span className="text-xl font-bold text-primary" data-testid="text-final-monthly">
+                      ₩{formatPrice(finalMonthlyPayment)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Gift Promotion */}
+                {quote.sheets >= 100 && (
+                  <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4">
+                    <div className="flex items-center gap-2">
+                      <Gift className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                      <span className="font-semibold text-amber-800 dark:text-amber-300">1월 한정 롯데모바일상품권</span>
+                    </div>
+                    <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
+                      5만원 증정 (100장 이상 구매시)
+                    </p>
+                  </div>
+                )}
+
+                {/* Info Notice */}
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50">
+                  <Info className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                  <p className="text-sm text-muted-foreground">
+                    정확한 견적은 현장 실측 후 안내드립니다.
+                  </p>
+                </div>
+
+                {/* CTA Buttons */}
+                <div className="flex flex-col gap-3 pt-2">
+                  <a
+                    href="tel:031-483-7400"
+                    className="flex h-12 items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-primary-foreground hover-elevate active-elevate-2"
+                    data-testid="link-call-quote"
+                  >
+                    <Phone className="h-5 w-5" />
+                    전화 상담 요청
+                  </a>
+                  <Button
+                    variant="outline"
+                    onClick={handleReset}
+                    className="h-12"
+                    data-testid="button-reset"
+                  >
+                    다시 계산하기
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Notes Section */}
         <Card>
