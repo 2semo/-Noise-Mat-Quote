@@ -333,8 +333,8 @@ export default function Home() {
           const firstPaymentDiscount = Math.min(Math.floor(quote.totalPrice * 0.03), 30000);
           // 최종 혜택가
           const finalBenefitPrice = quote.totalPrice - tierCashback - firstPaymentDiscount;
-          // 24개월 무이자 할부
-          const monthlyPayment = Math.ceil(quote.totalPrice / 24);
+          // 24개월 무이자 할부: 최종혜택가/24 (100원 이하 버림)
+          const monthlyPayment = Math.floor(finalBenefitPrice / 24 / 100) * 100;
           // 매월 30만원 사용시 캐시백
           const monthlyCashback = 11000;
           // 최종 월 부담금
