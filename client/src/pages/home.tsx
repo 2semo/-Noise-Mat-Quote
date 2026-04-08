@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Phone, Calculator, AlertCircle, Check, CreditCard, Info } from "lucide-react";
+import { Phone, Calculator, AlertCircle, Check, CreditCard, Info, Copy, Camera } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import bannerImage from "@assets/uWUmx59_1768308324848.jpeg";
 import {
   apartmentTypes,
@@ -143,6 +144,73 @@ export default function Home() {
   const handleModeSwitch = (mode: "table" | "manual") => {
     setInputMode(mode);
     setShowResult(false);
+  };
+
+  const quoteCardRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const buildQuoteText = () => {
+    if (!quote) return "";
+    const immediateDiscount =
+      quote.totalPrice >= 3000000 ? 100000 :
+      quote.totalPrice >= 2300000 ? 60000 :
+      quote.totalPrice >= 1800000 ? 30000 : 0;
+    const specialPrice = quote.totalPrice - immediateDiscount;
+    const tierCashback = Math.floor(specialPrice / 1000000) * 50000;
+    const firstPaymentDiscount = Math.min(Math.floor(specialPrice * 0.03), 30000);
+    const finalBenefitPrice = specialPrice - tierCashback - firstPaymentDiscount;
+    const lines = [
+      "[ 롯데하이마트 안산선부점 층간소음방지매트 견적 ]",
+      "",
+      inputMode === "table"
+        ? `아파트 타입: ${apartmentTypeLabels[apartmentType!]} / 평수: ${sizeRangeLabels[sizeRange!]} / 시공공간: ${installationAreaLabels[installationArea!]}`
+        : `입력방식: 장수 직접 입력 (${manualSheets}장)`,
+      "",
+      `예상 장수: ${quote.sheets}장`,
+      `총 시공 견적: ₩${formatPrice(quote.totalPrice)}`,
+    ];
+    if (immediateDiscount > 0) {
+      lines.push(`즉시할인: -₩${formatPrice(immediateDiscount)}`);
+      lines.push(`특별행사가: ₩${formatPrice(specialPrice)}`);
+    }
+    lines.push("");
+    lines.push("[ 제휴카드 혜택내역 ]");
+    lines.push(`금액대별 캐시백: -₩${formatPrice(tierCashback)}`);
+    lines.push(`첫 결제 할인: -₩${formatPrice(firstPaymentDiscount)}`);
+    lines.push(`최종 혜택가: ₩${formatPrice(finalBenefitPrice)}`);
+    lines.push("");
+    lines.push("[ 이용조건 충족시 추가혜택 ]");
+    lines.push("매월 30만원 사용시 캐시백: 11,000원 × 24개월");
+    lines.push("총 캐시백: -₩264,000");
+    lines.push(`이용조건 충족 최종혜택가: ₩${formatPrice(finalBenefitPrice - 264000)}`);
+    lines.push("");
+    lines.push("문의: 031-483-7400");
+    return lines.join("\n");
+  };
+
+  const handleCopyQuote = async () => {
+    const text = buildQuoteText();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: "복사 완료", description: "견적 내용이 클립보드에 복사되었습니다." });
+    } catch {
+      toast({ title: "복사 실패", description: "클립보드 접근이 허용되지 않았습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleCaptureQuote = async () => {
+    if (!quoteCardRef.current) return;
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(quoteCardRef.current, { scale: 2, useCORS: true, backgroundColor: null });
+      const link = document.createElement("a");
+      link.download = "견적서.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      toast({ title: "저장 완료", description: "견적 이미지가 저장되었습니다." });
+    } catch {
+      toast({ title: "캡처 실패", description: "이미지 저장 중 오류가 발생했습니다.", variant: "destructive" });
+    }
   };
 
   return (
@@ -427,7 +495,7 @@ export default function Home() {
           const finalBenefitPrice = specialPrice - tierCashback - firstPaymentDiscount;
 
           return (
-            <Card className="mb-6 border-primary/20 bg-primary/5">
+            <Card className="mb-6 border-primary/20 bg-primary/5" ref={quoteCardRef}>
               <CardHeader className="pb-4">
                 <CardTitle className="text-center text-xl">견적 결과</CardTitle>
               </CardHeader>
@@ -487,7 +555,7 @@ export default function Home() {
                 <div className="rounded-lg bg-background p-4 space-y-3">
                   <div className="flex items-center gap-2 mb-3">
                     <CreditCard className="h-5 w-5 text-primary" />
-                    <span className="font-semibold">혜택 내역</span>
+                    <span className="font-semibold">제휴카드 혜택내역</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">금액대별 캐시백</span>
@@ -536,6 +604,28 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground">
                     정확한 견적은 현장 실측 후 안내드립니다.
                   </p>
+                </div>
+
+                {/* Copy / Capture Buttons */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleCopyQuote}
+                    className="h-11 gap-2"
+                    data-testid="button-copy-quote"
+                  >
+                    <Copy className="h-4 w-4" />
+                    견적 복사
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleCaptureQuote}
+                    className="h-11 gap-2"
+                    data-testid="button-capture-quote"
+                  >
+                    <Camera className="h-4 w-4" />
+                    견적 캡처
+                  </Button>
                 </div>
 
                 {/* CTA Buttons */}
