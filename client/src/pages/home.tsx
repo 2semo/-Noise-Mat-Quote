@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
@@ -103,17 +104,27 @@ function formatPrice(price: number): string {
 }
 
 export default function Home() {
+  const [inputMode, setInputMode] = useState<"table" | "manual">("table");
   const [apartmentType, setApartmentType] = useState<ApartmentType | null>(null);
   const [sizeRange, setSizeRange] = useState<SizeRange | null>(null);
   const [installationArea, setInstallationArea] = useState<InstallationArea | null>(null);
+  const [manualSheets, setManualSheets] = useState<string>("");
   const [showResult, setShowResult] = useState(false);
 
-  const isFormComplete = apartmentType && sizeRange && installationArea;
+  const isFormComplete =
+    inputMode === "table"
+      ? !!(apartmentType && sizeRange && installationArea)
+      : !!(manualSheets && parseInt(manualSheets) >= 60);
 
   const quote = useMemo(() => {
     if (!isFormComplete) return null;
+    if (inputMode === "manual") {
+      const sheets = parseInt(manualSheets);
+      const totalPrice = sheets * 25000;
+      return { sheets, totalPrice, basePrice: totalPrice, pricePerSheet: 25000 };
+    }
     return calculateQuote(apartmentType!, sizeRange!, installationArea!);
-  }, [apartmentType, sizeRange, installationArea, isFormComplete]);
+  }, [apartmentType, sizeRange, installationArea, inputMode, manualSheets, isFormComplete]);
 
   const handleCalculate = () => {
     if (isFormComplete) {
@@ -125,6 +136,12 @@ export default function Home() {
     setApartmentType(null);
     setSizeRange(null);
     setInstallationArea(null);
+    setManualSheets("");
+    setShowResult(false);
+  };
+
+  const handleModeSwitch = (mode: "table" | "manual") => {
+    setInputMode(mode);
     setShowResult(false);
   };
 
@@ -178,136 +195,204 @@ export default function Home() {
         {/* Calculator Form */}
         <Card className="mb-6">
           <CardContent className="space-y-8 pt-6">
-            {/* 1. Apartment Type */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                  1
-                </span>
-                <Label className="text-base font-semibold">
-                  아파트 타입 <span className="text-destructive">*</span>
-                </Label>
-              </div>
-              <p className="text-sm text-muted-foreground pl-9">
-                확장형 = 거실 확장 포함 (일반적 확장) / 비확장형 = 기본형
-              </p>
-              <RadioGroup
-                value={apartmentType || ""}
-                onValueChange={(value) => {
-                  setApartmentType(value as ApartmentType);
-                  setShowResult(false);
-                }}
-                className="grid grid-cols-2 gap-4 pl-9"
+            {/* Mode Toggle */}
+            <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+              <button
+                onClick={() => handleModeSwitch("table")}
+                className={`rounded-md px-3 py-2 text-sm font-medium transition-all ${
+                  inputMode === "table"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-testid="button-mode-table"
               >
-                {apartmentTypes.map((type) => (
-                  <div key={type} className="relative">
-                    <RadioGroupItem
-                      value={type}
-                      id={`type-${type}`}
-                      className="peer sr-only"
-                      data-testid={`radio-type-${type}`}
-                    />
-                    <Label
-                      htmlFor={`type-${type}`}
-                      className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-4 transition-all hover-elevate peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5"
-                    >
-                      <span className="text-base font-semibold">
-                        {apartmentTypeLabels[type]}
-                      </span>
-                      <span className="mt-1 text-xs text-muted-foreground text-center">
-                        {apartmentTypeDescriptions[type]}
-                      </span>
-                    </Label>
-                    {apartmentType === type && (
-                      <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                        <Check className="h-4 w-4" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </RadioGroup>
+                조견표 선택
+              </button>
+              <button
+                onClick={() => handleModeSwitch("manual")}
+                className={`rounded-md px-3 py-2 text-sm font-medium transition-all ${
+                  inputMode === "manual"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-testid="button-mode-manual"
+              >
+                장수 직접 입력
+              </button>
             </div>
 
-            {/* 2. Size Range */}
-            <div className="space-y-4 border-t pt-6">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                  2
-                </span>
-                <Label className="text-base font-semibold">
-                  평수 구간 <span className="text-destructive">*</span>
-                </Label>
+            {/* Manual Sheet Input */}
+            {inputMode === "manual" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                    ✎
+                  </span>
+                  <Label className="text-base font-semibold">
+                    시공 장수 직접 입력 <span className="text-destructive">*</span>
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground pl-9">
+                  최소 60장 이상 입력하세요. (1장 = 25,000원)
+                </p>
+                <div className="pl-9 flex items-center gap-3">
+                  <Input
+                    type="number"
+                    min={60}
+                    placeholder="예) 120"
+                    value={manualSheets}
+                    onChange={(e) => {
+                      setManualSheets(e.target.value);
+                      setShowResult(false);
+                    }}
+                    className="w-40 text-center text-lg font-semibold"
+                    data-testid="input-manual-sheets"
+                  />
+                  <span className="text-base font-medium text-muted-foreground">장</span>
+                  {manualSheets && parseInt(manualSheets) >= 60 && (
+                    <span className="text-sm text-muted-foreground">
+                      = ₩{formatPrice(parseInt(manualSheets) * 25000)}
+                    </span>
+                  )}
+                </div>
+                {manualSheets && parseInt(manualSheets) < 60 && (
+                  <p className="pl-9 text-sm text-destructive">최소 60장 이상 입력해주세요.</p>
+                )}
               </div>
-              <div className="pl-9">
-                <Select
-                  value={sizeRange || ""}
-                  onValueChange={(value) => {
-                    setSizeRange(value as SizeRange);
-                    setShowResult(false);
-                  }}
-                >
-                  <SelectTrigger 
-                    className="w-full" 
-                    data-testid="select-size-trigger"
+            )}
+
+            {/* Table mode: 1. Apartment Type / 2. Size Range / 3. Installation Area */}
+            {inputMode === "table" && (
+              <>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                      1
+                    </span>
+                    <Label className="text-base font-semibold">
+                      아파트 타입 <span className="text-destructive">*</span>
+                    </Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground pl-9">
+                    확장형 = 거실 확장 포함 (일반적 확장) / 비확장형 = 기본형
+                  </p>
+                  <RadioGroup
+                    value={apartmentType || ""}
+                    onValueChange={(value) => {
+                      setApartmentType(value as ApartmentType);
+                      setShowResult(false);
+                    }}
+                    className="grid grid-cols-2 gap-4 pl-9"
                   >
-                    <SelectValue placeholder="평수를 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sizeRanges.map((range) => (
-                      <SelectItem 
-                        key={range} 
-                        value={range}
-                        data-testid={`select-size-${range}`}
-                      >
-                        {sizeRangeLabels[range]}
-                      </SelectItem>
+                    {apartmentTypes.map((type) => (
+                      <div key={type} className="relative">
+                        <RadioGroupItem
+                          value={type}
+                          id={`type-${type}`}
+                          className="peer sr-only"
+                          data-testid={`radio-type-${type}`}
+                        />
+                        <Label
+                          htmlFor={`type-${type}`}
+                          className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-4 transition-all hover-elevate peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5"
+                        >
+                          <span className="text-base font-semibold">
+                            {apartmentTypeLabels[type]}
+                          </span>
+                          <span className="mt-1 text-xs text-muted-foreground text-center">
+                            {apartmentTypeDescriptions[type]}
+                          </span>
+                        </Label>
+                        {apartmentType === type && (
+                          <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="h-4 w-4" />
+                          </div>
+                        )}
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                  </RadioGroup>
+                </div>
 
-            {/* 3. Installation Area */}
-            <div className="space-y-4 border-t pt-6">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                  3
-                </span>
-                <Label className="text-base font-semibold">
-                  시공 공간 <span className="text-destructive">*</span>
-                </Label>
-              </div>
-              <RadioGroup
-                value={installationArea || ""}
-                onValueChange={(value) => {
-                  setInstallationArea(value as InstallationArea);
-                  setShowResult(false);
-                }}
-                className="space-y-3 pl-9"
-              >
-                {installationAreas.map((area) => (
-                  <div key={area} className="relative">
-                    <RadioGroupItem
-                      value={area}
-                      id={`area-${area}`}
-                      className="peer sr-only"
-                      data-testid={`radio-area-${area}`}
-                    />
-                    <Label
-                      htmlFor={`area-${area}`}
-                      className="flex cursor-pointer items-center justify-between rounded-lg border-2 border-muted bg-popover px-4 py-3 transition-all hover-elevate peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5"
-                    >
-                      <span className="font-medium">
-                        {installationAreaLabels[area]}
-                      </span>
-                      {installationArea === area && (
-                        <Check className="h-5 w-5 text-primary" />
-                      )}
+                <div className="space-y-4 border-t pt-6">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                      2
+                    </span>
+                    <Label className="text-base font-semibold">
+                      평수 구간 <span className="text-destructive">*</span>
                     </Label>
                   </div>
-                ))}
-              </RadioGroup>
-            </div>
+                  <div className="pl-9">
+                    <Select
+                      value={sizeRange || ""}
+                      onValueChange={(value) => {
+                        setSizeRange(value as SizeRange);
+                        setShowResult(false);
+                      }}
+                    >
+                      <SelectTrigger
+                        className="w-full"
+                        data-testid="select-size-trigger"
+                      >
+                        <SelectValue placeholder="평수를 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sizeRanges.map((range) => (
+                          <SelectItem
+                            key={range}
+                            value={range}
+                            data-testid={`select-size-${range}`}
+                          >
+                            {sizeRangeLabels[range]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-4 border-t pt-6">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                      3
+                    </span>
+                    <Label className="text-base font-semibold">
+                      시공 공간 <span className="text-destructive">*</span>
+                    </Label>
+                  </div>
+                  <RadioGroup
+                    value={installationArea || ""}
+                    onValueChange={(value) => {
+                      setInstallationArea(value as InstallationArea);
+                      setShowResult(false);
+                    }}
+                    className="space-y-3 pl-9"
+                  >
+                    {installationAreas.map((area) => (
+                      <div key={area} className="relative">
+                        <RadioGroupItem
+                          value={area}
+                          id={`area-${area}`}
+                          className="peer sr-only"
+                          data-testid={`radio-area-${area}`}
+                        />
+                        <Label
+                          htmlFor={`area-${area}`}
+                          className="flex cursor-pointer items-center justify-between rounded-lg border-2 border-muted bg-popover px-4 py-3 transition-all hover-elevate peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5"
+                        >
+                          <span className="font-medium">
+                            {installationAreaLabels[area]}
+                          </span>
+                          {installationArea === area && (
+                            <Check className="h-5 w-5 text-primary" />
+                          )}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </>
+            )}
 
             {/* Calculate Button */}
             <div className="border-t pt-6">
@@ -349,18 +434,27 @@ export default function Home() {
               <CardContent className="space-y-6">
                 {/* Summary */}
                 <div className="rounded-lg bg-background p-4 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">아파트 타입</span>
-                    <span className="font-medium">{apartmentTypeLabels[apartmentType!]}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">평수</span>
-                    <span className="font-medium">{sizeRangeLabels[sizeRange!]}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">시공 공간</span>
-                    <span className="font-medium">{installationAreaLabels[installationArea!]}</span>
-                  </div>
+                  {inputMode === "table" ? (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">아파트 타입</span>
+                        <span className="font-medium">{apartmentTypeLabels[apartmentType!]}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">평수</span>
+                        <span className="font-medium">{sizeRangeLabels[sizeRange!]}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">시공 공간</span>
+                        <span className="font-medium">{installationAreaLabels[installationArea!]}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">입력 방식</span>
+                      <span className="font-medium">장수 직접 입력 ({manualSheets}장)</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Price Details */}
