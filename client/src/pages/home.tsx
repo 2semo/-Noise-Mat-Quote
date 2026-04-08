@@ -110,22 +110,25 @@ export default function Home() {
   const [sizeRange, setSizeRange] = useState<SizeRange | null>(null);
   const [installationArea, setInstallationArea] = useState<InstallationArea | null>(null);
   const [manualSheets, setManualSheets] = useState<string>("");
+  const [manualPricePerSheet, setManualPricePerSheet] = useState<string>("25000");
   const [showResult, setShowResult] = useState(false);
+
+  const manualPrice = parseInt(manualPricePerSheet) || 25000;
 
   const isFormComplete =
     inputMode === "table"
       ? !!(apartmentType && sizeRange && installationArea)
-      : !!(manualSheets && parseInt(manualSheets) >= 60);
+      : !!(manualSheets && parseInt(manualSheets) >= 60 && manualPrice >= 1000);
 
   const quote = useMemo(() => {
     if (!isFormComplete) return null;
     if (inputMode === "manual") {
       const sheets = parseInt(manualSheets);
-      const totalPrice = sheets * 25000;
-      return { sheets, totalPrice, basePrice: totalPrice, pricePerSheet: 25000 };
+      const totalPrice = sheets * manualPrice;
+      return { sheets, totalPrice, basePrice: totalPrice, pricePerSheet: manualPrice };
     }
     return calculateQuote(apartmentType!, sizeRange!, installationArea!);
-  }, [apartmentType, sizeRange, installationArea, inputMode, manualSheets, isFormComplete]);
+  }, [apartmentType, sizeRange, installationArea, inputMode, manualSheets, manualPrice, isFormComplete]);
 
   const handleCalculate = () => {
     if (isFormComplete) {
@@ -138,6 +141,7 @@ export default function Home() {
     setSizeRange(null);
     setInstallationArea(null);
     setManualSheets("");
+    setManualPricePerSheet("25000");
     setShowResult(false);
   };
 
@@ -164,7 +168,7 @@ export default function Home() {
       "",
       inputMode === "table"
         ? `아파트 타입: ${apartmentTypeLabels[apartmentType!]} / 평수: ${sizeRangeLabels[sizeRange!]} / 시공공간: ${installationAreaLabels[installationArea!]}`
-        : `입력방식: 장수 직접 입력 (${manualSheets}장)`,
+        : `입력방식: 장수 직접 입력 (${manualSheets}장 / 장당 ${formatPrice(manualPrice)}원)`,
       "",
       `예상 장수: ${quote.sheets}장`,
       `총 시공 견적: ₩${formatPrice(quote.totalPrice)}`,
@@ -301,8 +305,45 @@ export default function Home() {
                   </Label>
                 </div>
                 <p className="text-sm text-muted-foreground pl-9">
-                  최소 60장 이상 입력하세요. (1장 = 25,000원)
+                  최소 60장 이상 입력하세요.
                 </p>
+
+                {/* Price per sheet */}
+                <div className="pl-9 space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">장당 가격 설정</Label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {[25000, 23000, 20000, 18000].map((preset) => (
+                      <button
+                        key={preset}
+                        onClick={() => { setManualPricePerSheet(String(preset)); setShowResult(false); }}
+                        className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-all ${
+                          manualPricePerSheet === String(preset)
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-muted bg-popover text-muted-foreground hover:border-primary/50"
+                        }`}
+                        data-testid={`button-price-preset-${preset}`}
+                      >
+                        {formatPrice(preset)}원
+                      </button>
+                    ))}
+                    <span className="text-xs text-muted-foreground">또는 직접 입력:</span>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min={1000}
+                        step={500}
+                        placeholder="직접입력"
+                        value={manualPricePerSheet}
+                        onChange={(e) => { setManualPricePerSheet(e.target.value); setShowResult(false); }}
+                        className="w-28 text-center text-sm"
+                        data-testid="input-price-per-sheet"
+                      />
+                      <span className="text-sm text-muted-foreground">원/장</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sheet count */}
                 <div className="pl-9 flex items-center gap-3">
                   <Input
                     type="number"
@@ -317,9 +358,9 @@ export default function Home() {
                     data-testid="input-manual-sheets"
                   />
                   <span className="text-base font-medium text-muted-foreground">장</span>
-                  {manualSheets && parseInt(manualSheets) >= 60 && (
+                  {manualSheets && parseInt(manualSheets) >= 60 && manualPrice >= 1000 && (
                     <span className="text-sm text-muted-foreground">
-                      = ₩{formatPrice(parseInt(manualSheets) * 25000)}
+                      = ₩{formatPrice(parseInt(manualSheets) * manualPrice)}
                     </span>
                   )}
                 </div>
@@ -518,10 +559,16 @@ export default function Home() {
                       </div>
                     </>
                   ) : (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">입력 방식</span>
-                      <span className="font-medium">장수 직접 입력 ({manualSheets}장)</span>
-                    </div>
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">입력 방식</span>
+                        <span className="font-medium">장수 직접 입력</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">장수 / 장당 가격</span>
+                        <span className="font-medium">{manualSheets}장 / ₩{formatPrice(manualPrice)}</span>
+                      </div>
+                    </>
                   )}
                 </div>
 
