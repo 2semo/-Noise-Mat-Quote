@@ -312,7 +312,7 @@ export default function Home() {
                 <div className="pl-9 space-y-2">
                   <Label className="text-sm font-medium text-muted-foreground">장당 가격 설정</Label>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {[25000, 23000, 20000, 18000].map((preset) => (
+                    {[25000].map((preset) => (
                       <button
                         key={preset}
                         onClick={() => { setManualPricePerSheet(String(preset)); setShowResult(false); }}
