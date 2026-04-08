@@ -333,12 +333,6 @@ export default function Home() {
           const firstPaymentDiscount = Math.min(Math.floor(quote.totalPrice * 0.03), 30000);
           // 최종 혜택가
           const finalBenefitPrice = quote.totalPrice - tierCashback - firstPaymentDiscount;
-          // 24개월 무이자 할부: 최종혜택가/24 (100원 이하 버림)
-          const monthlyPayment = Math.floor(finalBenefitPrice / 24 / 100) * 100;
-          // 매월 30만원 사용시 캐시백
-          const monthlyCashback = 11000;
-          // 최종 월 부담금
-          const finalMonthlyPayment = monthlyPayment - monthlyCashback;
 
           return (
             <Card className="mb-6 border-primary/20 bg-primary/5">
@@ -398,26 +392,29 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Installment */}
+                {/* Installment / Condition Cashback */}
                 <div className="rounded-lg bg-background p-4 space-y-3">
                   <div className="flex items-center gap-2 mb-3">
                     <CreditCard className="h-5 w-5 text-primary" />
-                    <span className="font-semibold text-sm">24개월 무이자 할부 + 매월 30만원 사용시 1.1만원 캐시백</span>
+                    <span className="font-semibold text-sm">이용조건 충족시 추가 혜택</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">월</span>
-                    <span className="font-medium">₩{formatPrice(monthlyPayment)}</span>
+                    <span className="text-muted-foreground">매월 30만원 사용시 캐시백</span>
+                    <span className="font-medium">11,000원 × 24개월</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">캐시백</span>
-                    <span className="font-medium text-destructive">-₩{formatPrice(monthlyCashback)}</span>
+                  <div className="flex justify-between text-sm border-t pt-2">
+                    <span className="text-muted-foreground">총 캐시백</span>
+                    <span className="font-medium text-destructive">-₩264,000</span>
                   </div>
                   <div className="flex justify-between border-t pt-3">
-                    <span className="font-semibold">최종 월 부담금</span>
+                    <span className="font-semibold">이용조건 충족 최종혜택가</span>
                     <span className="text-xl font-bold text-primary" data-testid="text-final-monthly">
-                      ₩{formatPrice(finalMonthlyPayment)}
+                      ₩{formatPrice(finalBenefitPrice - 264000)}
                     </span>
                   </div>
+                  <p className="text-xs text-muted-foreground pt-1">
+                    = 제휴카드혜택가 - 11,000 × 24
+                  </p>
                 </div>
 
                 {/* Gift Promotion */}
