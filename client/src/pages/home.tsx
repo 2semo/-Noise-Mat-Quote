@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Phone, Calculator, AlertCircle, Check, CreditCard, Gift, Info } from "lucide-react";
+import { Phone, Calculator, AlertCircle, Check, CreditCard, Info } from "lucide-react";
 import bannerImage from "@assets/uWUmx59_1768308324848.jpeg";
 import {
   apartmentTypes,
@@ -327,12 +327,19 @@ export default function Home() {
 
         {/* Quote Result */}
         {showResult && quote && (() => {
-          // 금액대별 캐시백: 100만원 구간별 5%
-          const tierCashback = Math.floor(quote.totalPrice / 1000000) * 50000;
-          // 첫 결제 할인: 결제금액의 3% 최대 3만원
-          const firstPaymentDiscount = Math.min(Math.floor(quote.totalPrice * 0.03), 30000);
+          // 금액대별 즉시할인
+          const immediateDiscount =
+            quote.totalPrice >= 3000000 ? 100000 :
+            quote.totalPrice >= 2300000 ? 60000 :
+            quote.totalPrice >= 1800000 ? 30000 : 0;
+          // 특별행사가 = 총시공견적 - 즉시할인
+          const specialPrice = quote.totalPrice - immediateDiscount;
+          // 금액대별 캐시백: 특별행사가 기준 100만원 구간별 5만원
+          const tierCashback = Math.floor(specialPrice / 1000000) * 50000;
+          // 첫 결제 할인: 특별행사가의 3% 최대 3만원
+          const firstPaymentDiscount = Math.min(Math.floor(specialPrice * 0.03), 30000);
           // 최종 혜택가
-          const finalBenefitPrice = quote.totalPrice - tierCashback - firstPaymentDiscount;
+          const finalBenefitPrice = specialPrice - tierCashback - firstPaymentDiscount;
 
           return (
             <Card className="mb-6 border-primary/20 bg-primary/5">
@@ -362,11 +369,23 @@ export default function Home() {
                     <p className="text-sm text-muted-foreground mb-1">예상 필요 장수</p>
                     <p className="text-3xl font-bold" data-testid="text-sheets">{quote.sheets}장</p>
                   </div>
-                  <div className="text-center border-t pt-4">
-                    <p className="text-sm text-muted-foreground mb-1">총 시공 견적</p>
-                    <p className="text-3xl font-bold text-primary" data-testid="text-total-price">
-                      ₩{formatPrice(quote.totalPrice)}
-                    </p>
+                  <div className="rounded-lg bg-background p-4 space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">총 시공 견적</span>
+                      <span className="font-medium" data-testid="text-total-price">₩{formatPrice(quote.totalPrice)}</span>
+                    </div>
+                    {immediateDiscount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">즉시할인</span>
+                        <span className="font-medium text-destructive">-₩{formatPrice(immediateDiscount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t pt-3">
+                      <span className="font-semibold">특별행사가</span>
+                      <span className="text-2xl font-bold text-primary" data-testid="text-special-price">
+                        ₩{formatPrice(specialPrice)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -416,19 +435,6 @@ export default function Home() {
                     = 제휴카드혜택가 - 11,000 × 24
                   </p>
                 </div>
-
-                {/* Gift Promotion */}
-                {quote.sheets >= 100 && (
-                  <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4">
-                    <div className="flex items-center gap-2">
-                      <Gift className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                      <span className="font-semibold text-amber-800 dark:text-amber-300">1월 한정 롯데모바일상품권</span>
-                    </div>
-                    <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
-                      5만원 증정 (100장 이상 구매시)
-                    </p>
-                  </div>
-                )}
 
                 {/* Info Notice */}
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50">
