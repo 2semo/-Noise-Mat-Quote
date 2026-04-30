@@ -83,7 +83,7 @@ function calculateQuote(
   sizeRange: SizeRange,
   installationArea: InstallationArea
 ): QuoteResult {
-  const pricePerSheet = 25000; // 장당 가격
+  const pricePerSheet = 28000; // 장당 가격
 
   // 조견표에서 장수 조회
   const table = apartmentType === "expanded" ? expandedTable : standardTable;
